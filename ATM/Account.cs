@@ -1,34 +1,25 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ATM
 {
-    class Account
+    [Serializable]
+    abstract class Account
     {
-        decimal balance;
-        int acctNumber;
-        string name;
-        string PIN;
+        protected decimal Balance { get; set; }
+        protected int AcctNumber { get; set; }
+        public string Name { get; set; }
+        public string PIN { get; set; }
+        protected DateTime date1 = new DateTime();
+        protected DateTime date2 = new DateTime();
+        protected bool firstdateflag = false;
+        protected double Rate { get; set; }
 
         public Account(int bal, int num, String name, String PIN)
         {
-            balance = bal;
-            acctNumber = num;
-            this.name = name;
+            Balance = bal;
+            AcctNumber = num;
+            Name = name;
             this.PIN = PIN;
-        }
-
-        public String getName()
-        {
-            return name;
-        }
-
-        public String getPIN()
-        {
-            return PIN;
         }
 
         public void Menu()
@@ -55,15 +46,45 @@ namespace ATM
 
                 if (input == "1")
                 {
-                    Deposit();
+                    if (firstdateflag == false)
+                    {
+                        GetDate1();
+                        Deposit();
+                    }
+                    else
+                    {
+                        GetDate2();
+                        GetInterest();
+                        Deposit();
+                    }
                 }
                 else if (input == "2")
                 {
-                    Withdraw();
+                    if (firstdateflag == false)
+                    {
+                        GetDate1();
+                        Withdraw();
+                    }
+                    else if (firstdateflag == true)
+                    {
+                        GetDate2();
+                        GetInterest();
+                        Withdraw();
+                    }
                 }
                 else if (input == "3")
                 {
-                    CheckBalance();
+                    if (firstdateflag == false)
+                    {
+                        GetDate1();
+                        CheckBalance();
+                    }
+                    else if (firstdateflag == true)
+                    {
+                        GetDate2();
+                        GetInterest();
+                        CheckBalance();
+                    }
                 }
                 else if (input == "4")
                 {
@@ -93,7 +114,7 @@ namespace ATM
             }
             if (deposit > 0.00m)
             {
-                balance += deposit;
+                Balance += deposit;
                 Console.WriteLine("\nDeposit of " + string.Format("{0:C}", deposit) + " successful");
             }
             else
@@ -118,9 +139,9 @@ namespace ATM
             }
             if (withdrawl > 0.00m)
             {
-                if (withdrawl <= balance)
+                if (withdrawl <= Balance)
                 {
-                    balance -= withdrawl;
+                    Balance -= withdrawl;
                     Console.WriteLine("\nHere is " + string.Format("{0:C}", withdrawl));
                 }
                 else
@@ -136,7 +157,31 @@ namespace ATM
 
         void CheckBalance()
         {
-            Console.WriteLine("\nYour balance is: " + string.Format("{0:C}", balance));
+            Console.WriteLine("\nYour balance is: " + string.Format("{0:C}", Balance));
         }
+
+        void GetDate1()
+        {
+            Console.WriteLine("Please enter today's date in the format: mm/dd/yyyy");
+            String input = Console.ReadLine();
+            date1 = DateTime.Parse(input);
+
+            firstdateflag = true;
+        }
+
+        void GetDate2()
+        {
+            Console.WriteLine("Please enter today's date in the format: mm/dd/yyyy");
+            String input = Console.ReadLine();
+            date2 = DateTime.Parse(input);
+
+            if (date1.Year > date2.Year || date1.Year == date2.Year && date1.DayOfYear > date2.DayOfYear)
+            {
+                Console.WriteLine("\nYou must enter a later date than the previous date used\n");
+                GetDate2();
+            }
+        }
+
+        protected abstract void GetInterest();
     }
 }

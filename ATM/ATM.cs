@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.IO;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace ATM
 {
@@ -13,18 +12,18 @@ namespace ATM
         static void Main(string[] args)
         {
             ATM atm = new ATM();
-            //atm.start();
-            atm.greeting();
-            atm.runATM();
+            atm.LoadAccounts();
+            atm.Greeting();
+            atm.RunATM();
         }
 
-        void greeting()
+        void Greeting()
         {
             Console.WriteLine("Welcome, is this your first time using the ATM? (Y/N)");
             String input = Console.ReadLine();
             if (input == "y" || input == "Y")
             {
-                populateAcct();
+                PopulateAcct();
             }
             else if (input == "n" || input == "N")
             {
@@ -33,25 +32,27 @@ namespace ATM
             else
             {
                 Console.WriteLine("\nPlese type in Y or N, either case is acceptable\n");
-                greeting();
+                Greeting();
             }
         }
 
-        void runATM()
+        void RunATM()
         {
             try
             {
-                selectAcct();
+                SaveAccounts();
+                SelectAcct();
             }
             catch (Exception exc)
             {
                 Console.WriteLine("\nInvalid Input\n");
             }
-            greeting();
-            runATM();
+            SaveAccounts();
+            Greeting();
+            RunATM();
         }
 
-        void populateAcct()
+        void PopulateAcct()
         {
             int index = -99;
             for (int i = 0; i < myAccounts.Length; i++)
@@ -68,17 +69,17 @@ namespace ATM
                 String name = Console.ReadLine();
                 for (int i = 0; i < myAccounts.Length; i++)
                 {
-                    if (myAccounts[i] != null && name == myAccounts[i].getName())
+                    if (myAccounts[i] != null && name.ToLowerInvariant() == myAccounts[i].Name.ToLowerInvariant())
                     {
                         Console.WriteLine("\nThat name has already been used\n");
-                        greeting();
+                        Greeting();
                         return;
                     }
 
                     if (name == "")
                     {
                         Console.WriteLine("You must enter a name\n");
-                        greeting();
+                        Greeting();
                         return;
                     }
                 }
@@ -88,38 +89,37 @@ namespace ATM
                 if (PIN == "")
                 {
                     Console.WriteLine("You must enter a PIN\n");
-                    greeting();
+                    Greeting();
                     return;
                 }
-                /*
-                Console.WriteLine("\nWhat type of account would you like to open, checking, savings, or super saver?");
+
+                Console.WriteLine("\nWhat type of account would you like to open, checking or savings?");
                 String type = Console.ReadLine();
                 
-                if (type.equalsIgnoreCase("checking"))
+                if (type.Equals("checking", StringComparison.InvariantCultureIgnoreCase))
                 {
                     myAccounts[index] = new Checking(100, index, name, PIN);
                     Console.WriteLine("\nBalances start at $100, and the annual interest rate is 5%");
                 }
-                else if (type.equalsIgnoreCase("savings"))
+                else if (type.Equals("savings", StringComparison.InvariantCultureIgnoreCase))
                 {
                     myAccounts[index] = new Savings(100, index, name, PIN);
-                    Console.WriteLine("\nBalances start at $100, and the annual interest rate is 30%");
+                    Console.WriteLine("\nBalances start at $100, and the annual interest rate is 10%");
                 }
                 else
                 {
                     Console.WriteLine("\nInvalid account type");
-                    populateAcct();
-                }*/
-                myAccounts[index] = new Account(100, index, name, PIN);
-                Console.WriteLine("\nBalances start at $100, and the annual interest rate is 5%");
+                    PopulateAcct();
+                }
             }
             else
             {
                 Console.WriteLine("\nSorry, all available accounts are full\n");
-                greeting();
+                Greeting();
             }
         }
-        void selectAcct()
+
+        void SelectAcct()
         {
             int num = -99;
             String name, PIN;
@@ -132,7 +132,7 @@ namespace ATM
                 PIN = Console.ReadLine();
                 for (int i = 0; i < myAccounts.Length; i++)
                 {
-                    if (myAccounts[i] != null && name == myAccounts[i].getName() && PIN == myAccounts[i].getPIN())
+                    if (myAccounts[i] != null && name.ToLowerInvariant() == myAccounts[i].Name.ToLowerInvariant() && PIN == myAccounts[i].PIN)
                     {
                         num = i;
                         break;
@@ -144,6 +144,43 @@ namespace ATM
             catch (Exception exc)
             {
                 Console.WriteLine("\nInvalid Input");
+            }
+        }
+
+        void SaveAccounts()
+        {
+            try
+            {
+                IFormatter formatter = new BinaryFormatter();
+                Stream stream = new FileStream("Accounts.bin", FileMode.Create, FileAccess.Write, FileShare.None);
+                formatter.Serialize(stream, myAccounts);
+                stream.Close();
+            }
+            catch(Exception exc)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Error in SaveAccounts:");
+                Console.WriteLine(exc);
+            }
+        }
+
+        void LoadAccounts()
+        {
+            try
+            {
+                if (File.Exists("Accounts.bin"))
+                {
+                    IFormatter formatter = new BinaryFormatter();
+                    Stream stream = new FileStream("Accounts.bin", FileMode.Open, FileAccess.Read, FileShare.Read);
+                    myAccounts = (Account[])formatter.Deserialize(stream);
+                    stream.Close();
+                }
+            }
+            catch (Exception exc)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Error in LoadAccounts:");
+                Console.WriteLine(exc);
             }
         }
     }
